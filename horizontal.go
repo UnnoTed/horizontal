@@ -82,6 +82,7 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 	}
 	buf := consoleBufPool.Get().(*bytes.Buffer)
 	defer consoleBufPool.Put(buf)
+	buf.Write(horizontal)
 	lvlColor := cReset
 	level := "????"
 	if l, ok := event[zerolog.LevelFieldName].(string); ok {
@@ -128,8 +129,6 @@ func (w ConsoleWriter) Write(p []byte) (n int, err error) {
 		}
 		buf.WriteByte('\n')
 	}
-	buf.WriteByte('\n')
-	buf.Write(horizontal)
 	buf.WriteByte('\n')
 	buf.WriteTo(w.Out)
 	n = len(p)
