@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"os/signal"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +18,7 @@ import (
 	"github.com/nwidger/jsoncolor"
 	"github.com/olekukonko/ts"
 	"github.com/rs/zerolog"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -23,7 +27,28 @@ var (
 	horizontal []byte
 )
 
+func resizeSeparator() {
+	// clear slice
+	horizontal = horizontal[:0]
+
+	// terminal size
+	s, _ := ts.GetSize()
+
+	sep := os.Getenv("HORIZONTAL_SEPARATOR")
+	char := []byte(sep)
+	if len(char) == 0 {
+		// char = []byte("=")
+		char = []byte{226, 148, 128}
+	}
+
+	size = s.Col()
+	for i := 0; i < size; i++ {
+		horizontal = append(horizontal, char...)
+	}
+}
+
 func init() {
+	f.Indent = "  "
 	// json colors
 	f.SpaceColor = color.New(color.FgRed, color.Bold)
 	f.CommaColor = color.New(color.FgWhite, color.Bold)
@@ -38,12 +63,20 @@ func init() {
 	f.NullColor = color.New(color.FgWhite, color.Bold)
 	f.StringQuoteColor = color.New(color.FgBlue, color.Bold)
 
-	// terminal size
-	s, _ := ts.GetSize()
-	char := byte('=')
-	size = s.Col()
-	for i := 0; i < size; i++ {
-		horizontal = append(horizontal, char)
+	resizeSeparator()
+
+	if runtime.GOOS != "windows" {
+		ch := make(chan os.Signal, 1)
+		sig := unix.SIGWINCH
+		signal.Notify(ch, sig)
+		go func() {
+			for {
+				select {
+				case <-ch:
+					resizeSeparator()
+				}
+			}
+		}()
 	}
 }
 
