@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,7 +16,6 @@ import (
 	"github.com/nwidger/jsoncolor"
 	"github.com/olekukonko/ts"
 	"github.com/rs/zerolog"
-	"golang.org/x/sys/unix"
 )
 
 var (
@@ -64,20 +61,7 @@ func init() {
 	f.StringQuoteColor = color.New(color.FgBlue, color.Bold)
 
 	resizeSeparator()
-
-	if runtime.GOOS != "windows" {
-		ch := make(chan os.Signal, 1)
-		sig := unix.SIGWINCH
-		signal.Notify(ch, sig)
-		go func() {
-			for {
-				select {
-				case <-ch:
-					resizeSeparator()
-				}
-			}
-		}()
-	}
+	onResize()
 }
 
 const (
